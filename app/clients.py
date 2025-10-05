@@ -54,12 +54,21 @@ class MicroservicesClient:
 
     # MS3: history
     async def get_history(self, pet_id: UUID) -> Optional[HistoryResponse]:
-        url = f"{self.ms3}/history/pet/{pet_id}"
-        try:
-            data = await self._get(url)
-        except Exception:
-            return None
-        return HistoryResponse.model_validate(data)
+        # Intentar ruta singular (legacy) y si falla intentar plural (como en tu ms3 actual)
+        candidates = [
+            f"{self.ms3}/history/pet/{pet_id}",
+            f"{self.ms3}/histories/pet/{pet_id}"
+        ]
+        for url in candidates:
+            try:
+                data = await self._get(url)
+                if data is None:
+                    continue
+                return HistoryResponse.model_validate(data)
+            except Exception:
+                continue
+        return None
+
 
     async def get_applications_by_pet(self, pet_id: UUID) -> List[ApplicationView]:
         candidates = [
