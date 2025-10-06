@@ -37,29 +37,31 @@ class MicroservicesClient:
         raise last_exc
 
     # MS1: pets
-
     async def get_pet(self, pet_id: UUID) -> PetResponse:
         url = f"{self.ms1}/pets/{pet_id}"
         data = await self._get(url)
         if data is None:
             raise Exception("MS1 returned empty for pet")
 
+        # Añadir created_at si no existe (fallback)
         if "created_at" not in data or data.get("created_at") in (None, ""):
             from datetime import datetime
             data["created_at"] = datetime.utcnow().isoformat() + "Z"
 
         return PetResponse.model_validate(data)
 
-
-
-        async def list_pets(self, state: Optional[str] = None, from_date: Optional[str] = None, to_date: Optional[str] = None) -> List[PetResponse]:
+    async def list_pets(self, state: Optional[str] = None, from_date: Optional[str] = None, to_date: Optional[str] = None) -> List[PetResponse]:
         url = f"{self.ms1}/pets"
-        params = {}
-        if state: params["state"] = state
-        if from_date: params["from"] = from_date
-        if to_date: params["to"] = to_date
+        params: Dict[str, Any] = {}
+        if state:
+            params["state"] = state
+        if from_date:
+            params["from"] = from_date
+        if to_date:
+            params["to"] = to_date
         data = await self._get(url, params=params)
-        # expects a list
+        if not data:
+            return []
         return [PetResponse.model_validate(item) for item in data]
 
     # MS3: history
@@ -78,7 +80,6 @@ class MicroservicesClient:
             except Exception:
                 continue
         return None
-
 
     async def get_applications_by_pet(self, pet_id: UUID) -> List[ApplicationView]:
         candidates = [
@@ -108,14 +109,16 @@ class MicroservicesClient:
 
         try:
             url = f"{self.ms2}/requests"
-            params = {"status": "approved"}
-            if from_date: params["from"] = from_date
-            if to_date: params["to"] = to_date
+            params: Dict[str, Any] = {"status": "approved"}
+            if from_date:
+                params["from"] = from_date
+            if to_date:
+                params["to"] = to_date
             data = await self._get(url, params=params)
             if not data:
                 return []
             pet_ids = {item.get("petId") or item.get("pet_id") for item in data if item.get("petId") or item.get("pet_id")}
-            pets = []
+            pets: List[PetResponse] = []
             for pid in pet_ids:
                 try:
                     pets.append(await self.get_pet(UUID(pid)))
