@@ -31,7 +31,7 @@ class PetResponse(BaseModel):
     birth_date: date
     adoption_center_id: UUID
     image_url: Optional[str] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
     adoption_status: Optional[AdoptionStatusResponse] = None
     vaccines: List[VaccineResponse] = []
 

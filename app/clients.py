@@ -37,12 +37,22 @@ class MicroservicesClient:
         raise last_exc
 
     # MS1: pets
+
     async def get_pet(self, pet_id: UUID) -> PetResponse:
         url = f"{self.ms1}/pets/{pet_id}"
         data = await self._get(url)
+        if data is None:
+            raise Exception("MS1 returned empty for pet")
+
+        if "created_at" not in data or data.get("created_at") in (None, ""):
+            from datetime import datetime
+            data["created_at"] = datetime.utcnow().isoformat() + "Z"
+
         return PetResponse.model_validate(data)
 
-    async def list_pets(self, state: Optional[str] = None, from_date: Optional[str] = None, to_date: Optional[str] = None) -> List[PetResponse]:
+
+
+        async def list_pets(self, state: Optional[str] = None, from_date: Optional[str] = None, to_date: Optional[str] = None) -> List[PetResponse]:
         url = f"{self.ms1}/pets"
         params = {}
         if state: params["state"] = state
