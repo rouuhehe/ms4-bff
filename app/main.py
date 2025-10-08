@@ -50,7 +50,7 @@ async def shutdown():
     if client:
         await client.close()
 
-@app.get("/mascotas/{mascota_id}/perfil_completo")
+@app.get("/ms4/mascotas/{mascota_id}/perfil_completo")
 async def get_perfil_completo(mascota_id: UUID):
     key = cache_key_perfil(str(mascota_id))
     cached = await redis.get(key)
@@ -84,7 +84,7 @@ async def get_perfil_completo(mascota_id: UUID):
     await redis.set(key, json.dumps(response, default=str), ex=settings.CACHE_TTL)
     return response
 
-@app.get("/adoptadas")
+@app.get("/ms4/adoptadas")
 async def get_adoptadas(from_date: str | None = None, to_date: str | None = None):
     try:
         pets = await client.get_adopted_pets(from_date=from_date, to_date=to_date)
